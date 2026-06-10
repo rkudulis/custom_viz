@@ -180,7 +180,7 @@
         <div class="tv-body" id="tv-body"></div>
       </div>`;
     },
-    updateAsync(data, element, config, queryResponse, done) {
+    update(data, element, config, queryResponse) {
       try {
         this.clearErrors();
         const body = element.querySelector("#tv-body");
@@ -189,12 +189,10 @@
         const allFields = [...dimensions, ...measures];
         if (allFields.length === 0) {
           body.innerHTML = '<div class="tv-error">No fields found in query.</div>';
-          done();
           return;
         }
         if (data.length === 0) {
           body.innerHTML = '<div class="tv-error">No data returned from query.</div>';
-          done();
           return;
         }
         const measureTypeField = dimensions[0]?.name;
@@ -204,11 +202,9 @@
         body.innerHTML = buildTableHTML(data, deltaRows, allFields, kpiFields, headerRow);
         const table = body.querySelector("#tv-data-table");
         attachDrillHandlers(table, data, allFields);
-        done();
       } catch (err) {
         console.error("Custom viz error:", err);
         this.addError({ title: "Visualization Error", message: err.message });
-        done();
       }
     }
   });

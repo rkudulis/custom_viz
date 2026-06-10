@@ -16,7 +16,7 @@ looker.plugins.visualizations.add({
       </div>`;
   },
 
-  updateAsync(data, element, config, queryResponse, done) {
+  update(data, element, config, queryResponse) {
     try {
       this.clearErrors();
 
@@ -27,12 +27,10 @@ looker.plugins.visualizations.add({
 
       if (allFields.length === 0) {
         body.innerHTML = '<div class="tv-error">No fields found in query.</div>';
-        done();
         return;
       }
       if (data.length === 0) {
         body.innerHTML = '<div class="tv-error">No data returned from query.</div>';
-        done();
         return;
       }
 
@@ -45,12 +43,9 @@ looker.plugins.visualizations.add({
 
       const table = body.querySelector('#tv-data-table');
       attachDrillHandlers(table, data, allFields);
-
-      done();
     } catch (err) {
       console.error('Custom viz error:', err);
       this.addError({ title: 'Visualization Error', message: err.message });
-      done();
     }
   },
 });
