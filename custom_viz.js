@@ -295,8 +295,8 @@ looker.plugins.visualizations.add({
         `<th>${f.label_short || f.name}</th>`
       ).join('');
 
-      // ── Build table rows ─────────────────────────────────────────────────────
-      const rows = extendedData.map(row => {
+      // ── Build table rows (data rows in tbody, delta rows in tfoot) ──────────
+      const renderRow = (row) => {
         const isDelta = row[kpiFields[0]]?.is_delta;
         const rowClass = isDelta ? 'class="tv-delta-row"' : '';
         return `<tr ${rowClass}>${allFields.map(field => {
@@ -307,7 +307,10 @@ looker.plugins.visualizations.add({
           const displayValue = cell?.rendered_value || that.formatValue(cell?.value, field) || '—';
           return `<td ${cellClassAttr}>${displayValue}</td>`;
         }).join('')}</tr>`;
-      }).join('');
+      };
+
+      const bodyRows = data.map(renderRow).join('');
+      const deltaRows = extendedData.slice(data.length).map(renderRow).join('');
 
       // ── Render table ─────────────────────────────────────────────────────────
       body.innerHTML = `
@@ -316,8 +319,11 @@ looker.plugins.visualizations.add({
             <tr>${headerRow}</tr>
           </thead>
           <tbody>
-            ${rows}
+            ${bodyRows}
           </tbody>
+          <tfoot>
+            ${deltaRows}
+          </tfoot>
         </table>`;
 
       // ── Attach drill handlers ────────────────────────────────────────────────
