@@ -54,22 +54,7 @@ looker.plugins.visualizations.add({
   id: 'test_viz',
   label: 'Test Viz',
 
-  // ── Options (appear in the viz config panel) ──────────────────────────────
-  options: {
-    title: {
-      type: 'string',
-      label: 'Title',
-      default: 'Test Visualization',
-      order: 1,
-    },
-    header_color: {
-      type: 'string',
-      display: 'color',
-      label: 'Header color',
-      default: '#1D9E75',
-      order: 2,
-    },
-  },
+  options: {},
 
   // ── create() — runs ONCE when the tile is first mounted ───────────────────
   // Use it to build the static DOM skeleton. No data yet at this point.
@@ -78,65 +63,13 @@ looker.plugins.visualizations.add({
       <style>
         .tv-wrap {
           font-family: inherit;
-          padding: 16px;
+          padding: 0;
           box-sizing: border-box;
           height: 100%;
         }
-        .tv-header {
-          color: #fff;
-          padding: 10px 16px;
-          border-radius: 8px 8px 0 0;
-          font-size: 15px;
-          font-weight: 600;
-        }
         .tv-body {
-          border: 1px solid #e0e0e0;
-          border-top: none;
-          border-radius: 0 0 8px 8px;
-          padding: 14px 16px;
+          padding: 0;
           background: #fff;
-        }
-        .tv-stat {
-          font-size: 13px;
-          color: #444;
-          margin-bottom: 6px;
-        }
-        .tv-stat span {
-          font-weight: 600;
-          color: #111;
-        }
-        .tv-divider {
-          border: none;
-          border-top: 1px solid #eee;
-          margin: 10px 0;
-        }
-        .tv-field-list {
-          font-size: 12px;
-          color: #666;
-          line-height: 1.8;
-        }
-        .tv-field {
-          display: inline-block;
-          background: #f4f4f4;
-          border-radius: 4px;
-          padding: 1px 7px;
-          margin: 2px 3px 2px 0;
-          font-family: monospace;
-          font-size: 11px;
-          color: #333;
-        }
-        .tv-first-value {
-          margin-top: 10px;
-          font-size: 12px;
-          color: #666;
-        }
-        .tv-first-value code {
-          font-family: monospace;
-          font-size: 12px;
-          background: #f4f4f4;
-          padding: 2px 6px;
-          border-radius: 4px;
-          color: #333;
         }
         .tv-error {
           color: #c0392b;
@@ -188,7 +121,6 @@ looker.plugins.visualizations.add({
         }
       </style>
       <div class="tv-wrap">
-        <div class="tv-header" id="tv-header">Loading…</div>
         <div class="tv-body" id="tv-body"></div>
       </div>`;
   },
@@ -202,16 +134,7 @@ looker.plugins.visualizations.add({
       this.clearErrors();
 
       const that = this;
-      const header = element.querySelector('#tv-header');
-      const body   = element.querySelector('#tv-body');
-
-      // ── Read config options ──────────────────────────────────────────────────
-      const title       = config.title || 'Test Visualization';
-      const headerColor = config.header_color || '#1D9E75';
-
-      // ── Apply header ─────────────────────────────────────────────────────────
-      header.textContent    = title;
-      header.style.background = headerColor;
+      const body = element.querySelector('#tv-body');
 
       // ── Read fields from queryResponse ───────────────────────────────────────
       const dimensions = queryResponse.fields.dimensions || [];
