@@ -136,6 +136,19 @@ looker.plugins.visualizations.add({
         .tv-table tr:hover {
           background: #f9f9f9;
         }
+        .tv-delta-row {
+          background: #f0f0f0;
+          font-weight: 600;
+        }
+        .tv-delta-row:hover {
+          background: #e8e8e8;
+        }
+        .tv-delta-positive {
+          color: #27ae60;
+        }
+        .tv-delta-negative {
+          color: #e74c3c;
+        }
       </style>
       <div class="tv-wrap">
         <div class="tv-header" id="tv-header">Loading…</div>
@@ -176,17 +189,79 @@ looker.plugins.visualizations.add({
       return;
     }
 
+    // ── Extract measure_type field (first dimension) ──────────────────────────
+    const measureTypeField = dimensions[0]?.name;
+    const kpiFields = measures.map(m => m.name);
+
+    // ── Separate data by measure_type ────────────────────────────────────────
+    const rowsByType = {};
+    data.forEach(row => {
+      const type = row[measureTypeField]?.value;
+      if (type) rowsByType[type] = row;
+    });
+
+    // ── Build extended data with delta rows ──────────────────────────────────
+    const extendedData = [...data];
+
+    // Fact vs Plan: (fact / plan) - 1
+    if (rowsByType['Fact'] && rowsByType['Plan']) {
+      const deltaRow = { [measureTypeField]: { value: 'Fact vs Plan', rendered_value: 'Fact vs Plan' } };
+      kpiFields.forEach(kpi => {
+        const factVal = rowsByType['Fact'][kpi]?.value;
+        const planVal = rowsByType['Plan'][kpi]?.value;
+        if (factVal != null && planVal != null && planVal !== 0) {
+          const pctDelta = (factVal / planVal) - 1;
+          deltaRow[kpi] = {
+            value: pctDelta,
+            rendered_value: (pctDelta * 100).toFixed(1) + '%',
+            is_delta: true,
+            delta_sign: pctDelta >= 0 ? 'positive' : 'negative'
+          };
+        } else {
+          deltaRow[kpi] = { rendered_value: '—' };
+        }
+      });
+      extendedData.push(deltaRow);
+    }
+
+    // Fact vs PY: (fact / py) - 1
+    if (rowsByType['Fact'] && rowsByType['Past Year']) {
+      const deltaRow = { [measureTypeField]: { value: 'Fact vs PY', rendered_value: 'Fact vs PY' } };
+      kpiFields.forEach(kpi => {
+        const factVal = rowsByType['Fact'][kpi]?.value;
+        const pyVal = rowsByType['Past Year'][kpi]?.value;
+        if (factVal != null && pyVal != null && pyVal !== 0) {
+          const pctDelta = (factVal / pyVal) - 1;
+          deltaRow[kpi] = {
+            value: pctDelta,
+            rendered_value: (pctDelta * 100).toFixed(1) + '%',
+            is_delta: true,
+            delta_sign: pctDelta >= 0 ? 'positive' : 'negative'
+          };
+        } else {
+          deltaRow[kpi] = { rendered_value: '—' };
+        }
+      });
+      extendedData.push(deltaRow);
+    }
+
     // ── Build table header ───────────────────────────────────────────────────
     const headerRow = allFields.map(f =>
       `<th>${f.label_short || f.name}</th>`
     ).join('');
 
     // ── Build table rows ─────────────────────────────────────────────────────
-    const rows = data.map(row =>
-      `<tr>${allFields.map(field =>
-        `<td>${row[field.name]?.rendered_value ?? row[field.name]?.value ?? '—'}</td>`
-      ).join('')}</tr>`
-    ).join('');
+    const rows = extendedData.map(row => {
+      const isDelta = row[kpiFields[0]]?.is_delta;
+      const rowClass = isDelta ? 'class="tv-delta-row"' : '';
+      return `<tr ${rowClass}>${allFields.map(field => {
+        const cell = row[field.name];
+        const isDeltaCell = cell?.is_delta;
+        const cellClass = isDeltaCell ? (cell.delta_sign === 'positive' ? 'tv-delta-positive' : 'tv-delta-negative') : '';
+        const cellClassAttr = cellClass ? `class="${cellClass}"` : '';
+        return `<td ${cellClassAttr}>${cell?.rendered_value ?? cell?.value ?? '—'}</td>`;
+      }).join('')}</tr>`;
+    }).join('');
 
     // ── Render table ─────────────────────────────────────────────────────────
     body.innerHTML = `
