@@ -201,156 +201,161 @@ looker.plugins.visualizations.add({
   // This is where all your rendering logic lives.
   update(data, element, config, queryResponse) {
 
-    // Always clear errors from previous renders first
-    this.clearErrors();
+    try {
+      // Always clear errors from previous renders first
+      this.clearErrors();
 
-    const that = this;
-    const header = element.querySelector('#tv-header');
-    const body   = element.querySelector('#tv-body');
+      const that = this;
+      const header = element.querySelector('#tv-header');
+      const body   = element.querySelector('#tv-body');
 
-    // ── Read config options ──────────────────────────────────────────────────
-    const title       = config.title || 'Test Visualization';
-    const headerColor = config.header_color || '#1D9E75';
+      // ── Read config options ──────────────────────────────────────────────────
+      const title       = config.title || 'Test Visualization';
+      const headerColor = config.header_color || '#1D9E75';
 
-    // ── Apply header ─────────────────────────────────────────────────────────
-    header.textContent    = title;
-    header.style.background = headerColor;
+      // ── Apply header ─────────────────────────────────────────────────────────
+      header.textContent    = title;
+      header.style.background = headerColor;
 
-    // ── Read fields from queryResponse ───────────────────────────────────────
-    const dimensions = queryResponse.fields.dimensions || [];
-    const measures   = queryResponse.fields.measures   || [];
-    const allFields  = [...dimensions, ...measures];
+      // ── Read fields from queryResponse ───────────────────────────────────────
+      const dimensions = queryResponse.fields.dimensions || [];
+      const measures   = queryResponse.fields.measures   || [];
+      const allFields  = [...dimensions, ...measures];
 
-    if (allFields.length === 0) {
-      body.innerHTML = '<div class="tv-error">No fields found in query. Add at least one dimension or measure.</div>';
-      return;
-    }
+      if (allFields.length === 0) {
+        body.innerHTML = '<div class="tv-error">No fields found in query. Add at least one dimension or measure.</div>';
+        return;
+      }
 
-    if (data.length === 0) {
-      body.innerHTML = '<div class="tv-error">No data returned from query.</div>';
-      return;
-    }
+      if (data.length === 0) {
+        body.innerHTML = '<div class="tv-error">No data returned from query.</div>';
+        return;
+      }
 
-    // ── Extract measure_type field (first dimension) ──────────────────────────
-    const measureTypeField = dimensions[0]?.name;
-    const kpiFields = measures.map(m => m.name);
+      // ── Extract measure_type field (first dimension) ──────────────────────────
+      const measureTypeField = dimensions[0]?.name;
+      const kpiFields = measures.map(m => m.name);
 
-    // ── Separate data by measure_type ────────────────────────────────────────
-    const rowsByType = {};
-    data.forEach(row => {
-      const type = row[measureTypeField]?.value;
-      if (type) rowsByType[type] = row;
-    });
-
-    // ── Build extended data with delta rows ──────────────────────────────────
-    const extendedData = [...data];
-
-    // Fact vs Plan: (fact / plan) - 1
-    if (rowsByType['Fact'] && rowsByType['Plan']) {
-      const deltaRow = { ...rowsByType['Fact'] };
-      deltaRow[measureTypeField] = { value: 'Fact vs Plan', rendered_value: 'Fact vs Plan' };
-      kpiFields.forEach(kpi => {
-        const factVal = rowsByType['Fact'][kpi]?.value;
-        const planVal = rowsByType['Plan'][kpi]?.value;
-        if (factVal != null && planVal != null && planVal !== 0) {
-          const pctDelta = (factVal / planVal) - 1;
-          deltaRow[kpi] = {
-            value: pctDelta,
-            rendered_value: (pctDelta * 100).toFixed(1) + '%',
-            is_delta: true,
-            delta_sign: pctDelta >= 0 ? 'positive' : 'negative'
-          };
-        } else {
-          deltaRow[kpi] = { rendered_value: '—' };
-        }
+      // ── Separate data by measure_type ────────────────────────────────────────
+      const rowsByType = {};
+      data.forEach(row => {
+        const type = row[measureTypeField]?.value;
+        if (type) rowsByType[type] = row;
       });
-      extendedData.push(deltaRow);
-    }
 
-    // Fact vs PY: (fact / py) - 1
-    if (rowsByType['Fact'] && rowsByType['Past Year']) {
-      const deltaRow = { ...rowsByType['Fact'] };
-      deltaRow[measureTypeField] = { value: 'Fact vs PY', rendered_value: 'Fact vs PY' };
-      kpiFields.forEach(kpi => {
-        const factVal = rowsByType['Fact'][kpi]?.value;
-        const pyVal = rowsByType['Past Year'][kpi]?.value;
-        if (factVal != null && pyVal != null && pyVal !== 0) {
-          const pctDelta = (factVal / pyVal) - 1;
-          deltaRow[kpi] = {
-            value: pctDelta,
-            rendered_value: (pctDelta * 100).toFixed(1) + '%',
-            is_delta: true,
-            delta_sign: pctDelta >= 0 ? 'positive' : 'negative'
-          };
-        } else {
-          deltaRow[kpi] = { rendered_value: '—' };
-        }
-      });
-      extendedData.push(deltaRow);
-    }
+      // ── Build extended data with delta rows ──────────────────────────────────
+      const extendedData = [...data];
 
-    // ── Build table header ───────────────────────────────────────────────────
-    const headerRow = allFields.map(f =>
-      `<th>${f.label_short || f.name}</th>`
-    ).join('');
-
-    // ── Build table rows ─────────────────────────────────────────────────────
-    const rows = extendedData.map(row => {
-      const isDelta = row[kpiFields[0]]?.is_delta;
-      const rowClass = isDelta ? 'class="tv-delta-row"' : '';
-      return `<tr ${rowClass}>${allFields.map(field => {
-        const cell = row[field.name];
-        const isDeltaCell = cell?.is_delta;
-        const cellClass = isDeltaCell ? (cell.delta_sign === 'positive' ? 'tv-delta-positive' : 'tv-delta-negative') : '';
-        const cellClassAttr = cellClass ? `class="${cellClass}"` : '';
-        const displayValue = cell?.rendered_value || that.formatValue(cell?.value, field) || '—';
-        return `<td ${cellClassAttr}>${displayValue}</td>`;
-      }).join('')}</tr>`;
-    }).join('');
-
-    // ── Render table ─────────────────────────────────────────────────────────
-    body.innerHTML = `
-      <table class="tv-table" id="tv-data-table">
-        <thead>
-          <tr>${headerRow}</tr>
-        </thead>
-        <tbody>
-          ${rows}
-        </tbody>
-      </table>`;
-
-    // ── Attach drill handlers ────────────────────────────────────────────────
-    if (queryResponse.hasDrills) {
-      const table = body.querySelector('#tv-data-table');
-      const rows = table.querySelectorAll('tbody tr');
-      const originalDataRowCount = data.length; // Only original data, not delta rows
-
-      rows.forEach((row, rowIdx) => {
-        // Skip synthetic delta rows (they have no corresponding queryResponse index)
-        if (rowIdx >= originalDataRowCount) {
-          return;
-        }
-
-        const cells = row.querySelectorAll('td');
-        cells.forEach((cell, cellIdx) => {
-          const field = allFields[cellIdx];
-          if (!field) return;
-
-          // Check if field has drill capability
-          if (queryResponse.hasDrills(field, rowIdx)) {
-            cell.setAttribute('data-drillable', 'true');
-            cell.addEventListener('click', (e) => {
-              e.stopPropagation();
-              const drillData = queryResponse.drillData(field, rowIdx);
-              that.trigger('drilldown', drillData);
-            });
+      // Fact vs Plan: (fact / plan) - 1
+      if (rowsByType['Fact'] && rowsByType['Plan']) {
+        const deltaRow = { ...rowsByType['Fact'] };
+        deltaRow[measureTypeField] = { value: 'Fact vs Plan', rendered_value: 'Fact vs Plan' };
+        kpiFields.forEach(kpi => {
+          const factVal = rowsByType['Fact'][kpi]?.value;
+          const planVal = rowsByType['Plan'][kpi]?.value;
+          if (factVal != null && planVal != null && planVal !== 0) {
+            const pctDelta = (factVal / planVal) - 1;
+            deltaRow[kpi] = {
+              value: pctDelta,
+              rendered_value: (pctDelta * 100).toFixed(1) + '%',
+              is_delta: true,
+              delta_sign: pctDelta >= 0 ? 'positive' : 'negative'
+            };
+          } else {
+            deltaRow[kpi] = { rendered_value: '—' };
           }
         });
-      });
-    }
+        extendedData.push(deltaRow);
+      }
 
-    // Signal to Looker that rendering is complete
-    this.trigger('updateComplete');
+      // Fact vs PY: (fact / py) - 1
+      if (rowsByType['Fact'] && rowsByType['Past Year']) {
+        const deltaRow = { ...rowsByType['Fact'] };
+        deltaRow[measureTypeField] = { value: 'Fact vs PY', rendered_value: 'Fact vs PY' };
+        kpiFields.forEach(kpi => {
+          const factVal = rowsByType['Fact'][kpi]?.value;
+          const pyVal = rowsByType['Past Year'][kpi]?.value;
+          if (factVal != null && pyVal != null && pyVal !== 0) {
+            const pctDelta = (factVal / pyVal) - 1;
+            deltaRow[kpi] = {
+              value: pctDelta,
+              rendered_value: (pctDelta * 100).toFixed(1) + '%',
+              is_delta: true,
+              delta_sign: pctDelta >= 0 ? 'positive' : 'negative'
+            };
+          } else {
+            deltaRow[kpi] = { rendered_value: '—' };
+          }
+        });
+        extendedData.push(deltaRow);
+      }
+
+      // ── Build table header ───────────────────────────────────────────────────
+      const headerRow = allFields.map(f =>
+        `<th>${f.label_short || f.name}</th>`
+      ).join('');
+
+      // ── Build table rows ─────────────────────────────────────────────────────
+      const rows = extendedData.map(row => {
+        const isDelta = row[kpiFields[0]]?.is_delta;
+        const rowClass = isDelta ? 'class="tv-delta-row"' : '';
+        return `<tr ${rowClass}>${allFields.map(field => {
+          const cell = row[field.name];
+          const isDeltaCell = cell?.is_delta;
+          const cellClass = isDeltaCell ? (cell.delta_sign === 'positive' ? 'tv-delta-positive' : 'tv-delta-negative') : '';
+          const cellClassAttr = cellClass ? `class="${cellClass}"` : '';
+          const displayValue = cell?.rendered_value || that.formatValue(cell?.value, field) || '—';
+          return `<td ${cellClassAttr}>${displayValue}</td>`;
+        }).join('')}</tr>`;
+      }).join('');
+
+      // ── Render table ─────────────────────────────────────────────────────────
+      body.innerHTML = `
+        <table class="tv-table" id="tv-data-table">
+          <thead>
+            <tr>${headerRow}</tr>
+          </thead>
+          <tbody>
+            ${rows}
+          </tbody>
+        </table>`;
+
+      // ── Attach drill handlers ────────────────────────────────────────────────
+      if (queryResponse.hasDrills) {
+        const table = body.querySelector('#tv-data-table');
+        const rows = table.querySelectorAll('tbody tr');
+        const originalDataRowCount = data.length; // Only original data, not delta rows
+
+        rows.forEach((row, rowIdx) => {
+          // Skip synthetic delta rows (they have no corresponding queryResponse index)
+          if (rowIdx >= originalDataRowCount) {
+            return;
+          }
+
+          const cells = row.querySelectorAll('td');
+          cells.forEach((cell, cellIdx) => {
+            const field = allFields[cellIdx];
+            if (!field) return;
+
+            // Check if field has drill capability
+            if (queryResponse.hasDrills(field, rowIdx)) {
+              cell.setAttribute('data-drillable', 'true');
+              cell.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const drillData = queryResponse.drillData(field, rowIdx);
+                that.trigger('drilldown', drillData);
+              });
+            }
+          });
+        });
+      }
+
+      // Signal to Looker that rendering is complete
+      this.trigger('updateComplete');
+    } catch (err) {
+      console.error('Custom viz error:', err);
+      this.addError({title: 'Visualization Error', message: err.message});
+    }
   },
 
 });
