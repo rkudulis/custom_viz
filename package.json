@@ -1,0 +1,11 @@
+{
+  "name": "custom-viz",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "esbuild src/index.js --bundle --outfile=dist/custom_viz.js",
+    "watch": "esbuild src/index.js --bundle --outfile=dist/custom_viz.js --watch"
+  },
+  "devDependencies": {
+    "esbuild": "^0.21.0"
+  }
+}
