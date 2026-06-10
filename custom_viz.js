@@ -247,7 +247,8 @@ looker.plugins.visualizations.add({
 
     // Fact vs Plan: (fact / plan) - 1
     if (rowsByType['Fact'] && rowsByType['Plan']) {
-      const deltaRow = { [measureTypeField]: { value: 'Fact vs Plan', rendered_value: 'Fact vs Plan' } };
+      const deltaRow = { ...rowsByType['Fact'] };
+      deltaRow[measureTypeField] = { value: 'Fact vs Plan', rendered_value: 'Fact vs Plan' };
       kpiFields.forEach(kpi => {
         const factVal = rowsByType['Fact'][kpi]?.value;
         const planVal = rowsByType['Plan'][kpi]?.value;
@@ -268,7 +269,8 @@ looker.plugins.visualizations.add({
 
     // Fact vs PY: (fact / py) - 1
     if (rowsByType['Fact'] && rowsByType['Past Year']) {
-      const deltaRow = { [measureTypeField]: { value: 'Fact vs PY', rendered_value: 'Fact vs PY' } };
+      const deltaRow = { ...rowsByType['Fact'] };
+      deltaRow[measureTypeField] = { value: 'Fact vs PY', rendered_value: 'Fact vs PY' };
       kpiFields.forEach(kpi => {
         const factVal = rowsByType['Fact'][kpi]?.value;
         const pyVal = rowsByType['Past Year'][kpi]?.value;
