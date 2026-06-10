@@ -204,6 +204,7 @@ looker.plugins.visualizations.add({
     // Always clear errors from previous renders first
     this.clearErrors();
 
+    const that = this;
     const header = element.querySelector('#tv-header');
     const body   = element.querySelector('#tv-body');
 
@@ -317,7 +318,6 @@ looker.plugins.visualizations.add({
       </table>`;
 
     // ── Attach drill handlers ────────────────────────────────────────────────
-    const that = this;
     if (queryResponse.hasDrills) {
       const table = body.querySelector('#tv-data-table');
       const rows = table.querySelectorAll('tbody tr');
