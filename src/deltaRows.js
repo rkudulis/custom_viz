@@ -20,7 +20,7 @@ export function buildDeltaRows(data, measureTypeField, kpiFields) {
 
 function makeDeltaRow(factRow, baseRow, label, measureTypeField, kpiFields) {
   const row = { ...factRow };
-  row[measureTypeField] = { value: label, rendered_value: label };
+  row[measureTypeField] = { value: label, rendered: label };
 
   kpiFields.forEach(kpi => {
     const factVal = factRow[kpi]?.value;
@@ -30,12 +30,12 @@ function makeDeltaRow(factRow, baseRow, label, measureTypeField, kpiFields) {
       const pctDelta = (factVal / baseVal) - 1;
       row[kpi] = {
         value: pctDelta,
-        rendered_value: (pctDelta * 100).toFixed(1) + '%',
+        rendered: (pctDelta * 100).toFixed(1) + '%',
         is_delta: true,
         delta_sign: pctDelta >= 0 ? 'positive' : 'negative',
       };
     } else {
-      row[kpi] = { rendered_value: '—' };
+      row[kpi] = { rendered: '—' };
     }
   });
 

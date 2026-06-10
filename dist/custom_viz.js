@@ -79,7 +79,7 @@
   }
   function makeDeltaRow(factRow, baseRow, label, measureTypeField, kpiFields) {
     const row = { ...factRow };
-    row[measureTypeField] = { value: label, rendered_value: label };
+    row[measureTypeField] = { value: label, rendered: label };
     kpiFields.forEach((kpi) => {
       const factVal = factRow[kpi]?.value;
       const baseVal = baseRow[kpi]?.value;
@@ -87,12 +87,12 @@
         const pctDelta = factVal / baseVal - 1;
         row[kpi] = {
           value: pctDelta,
-          rendered_value: (pctDelta * 100).toFixed(1) + "%",
+          rendered: (pctDelta * 100).toFixed(1) + "%",
           is_delta: true,
           delta_sign: pctDelta >= 0 ? "positive" : "negative"
         };
       } else {
-        row[kpi] = { rendered_value: "\u2014" };
+        row[kpi] = { rendered: "\u2014" };
       }
     });
     return row;
@@ -139,7 +139,7 @@
       const isDeltaCell = cell?.is_delta;
       const cellClass = isDeltaCell ? cell.delta_sign === "positive" ? "tv-delta-positive" : "tv-delta-negative" : "";
       const classAttr = cellClass ? `class="${cellClass}"` : "";
-      const display = cell?.rendered_value || formatValue(cell?.value, field) || "\u2014";
+      const display = cell?.rendered ?? formatValue(cell?.value, field) ?? "\u2014";
       return `<td ${classAttr}>${display}</td>`;
     }).join("");
     return `<tr ${rowClass}>${cells}</tr>`;

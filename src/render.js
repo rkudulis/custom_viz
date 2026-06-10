@@ -27,7 +27,7 @@ function renderRow(row, allFields, kpiFields) {
       ? (cell.delta_sign === 'positive' ? 'tv-delta-positive' : 'tv-delta-negative')
       : '';
     const classAttr = cellClass ? `class="${cellClass}"` : '';
-    const display = cell?.rendered_value || formatValue(cell?.value, field) || '—';
+    const display = cell?.rendered ?? formatValue(cell?.value, field) ?? '—';
     return `<td ${classAttr}>${display}</td>`;
   }).join('');
 
