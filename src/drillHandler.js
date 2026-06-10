@@ -12,7 +12,10 @@ export function attachDrillHandlers(table, data, allFields) {
         cell.setAttribute('data-drillable', 'true');
         cell.addEventListener('click', (e) => {
           e.stopPropagation();
-          LookerCharts.Utils.openDrillMenu({ links: cellData.links, event: e });
+          LookerCharts.Utils.openDrillMenu({
+            links: cellData.links,
+            event: { metaKey: e.metaKey, pageX: e.pageX, pageY: e.pageY - window.pageYOffset },
+          });
         });
       }
     });
