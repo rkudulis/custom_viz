@@ -115,6 +115,27 @@ looker.plugins.visualizations.add({
           font-size: 13px;
           padding: 12px;
         }
+        .tv-table {
+          width: 100%;
+          border-collapse: collapse;
+          font-size: 13px;
+        }
+        .tv-table th {
+          background: #f4f4f4;
+          padding: 10px 12px;
+          text-align: left;
+          border-bottom: 2px solid #ddd;
+          font-weight: 600;
+          color: #333;
+        }
+        .tv-table td {
+          padding: 10px 12px;
+          border-bottom: 1px solid #eee;
+          color: #444;
+        }
+        .tv-table tr:hover {
+          background: #f9f9f9;
+        }
       </style>
       <div class="tv-wrap">
         <div class="tv-header" id="tv-header">Loading…</div>
@@ -141,7 +162,6 @@ looker.plugins.visualizations.add({
     header.style.background = headerColor;
 
     // ── Read fields from queryResponse ───────────────────────────────────────
-    // queryResponse.fields has two arrays: dimensions and measures
     const dimensions = queryResponse.fields.dimensions || [];
     const measures   = queryResponse.fields.measures   || [];
     const allFields  = [...dimensions, ...measures];
@@ -151,48 +171,33 @@ looker.plugins.visualizations.add({
       return;
     }
 
-    // ── Row count ────────────────────────────────────────────────────────────
-    const rowCount = data.length;
-
-    // ── First cell value ─────────────────────────────────────────────────────
-    // data[0] is an object keyed by field name.
-    // Each value is { value: rawValue, rendered_value: formattedString }
-    let firstValue = '—';
-    if (rowCount > 0) {
-      const firstFieldName = allFields[0].name;
-      const cell = data[0][firstFieldName];
-      if (cell) {
-        firstValue = cell.rendered_value ?? cell.value ?? '—';
-      }
+    if (data.length === 0) {
+      body.innerHTML = '<div class="tv-error">No data returned from query.</div>';
+      return;
     }
 
-    // ── Build field tag list ──────────────────────────────────────────────────
-    const dimTags = dimensions.map(f =>
-      `<span class="tv-field" style="border-left: 3px solid #378ADD">${f.label_short || f.name}</span>`
+    // ── Build table header ───────────────────────────────────────────────────
+    const headerRow = allFields.map(f =>
+      `<th>${f.label_short || f.name}</th>`
     ).join('');
 
-    const measTags = measures.map(f =>
-      `<span class="tv-field" style="border-left: 3px solid #1D9E75">${f.label_short || f.name}</span>`
+    // ── Build table rows ─────────────────────────────────────────────────────
+    const rows = data.map(row =>
+      `<tr>${allFields.map(field =>
+        `<td>${row[field.name]?.rendered_value ?? row[field.name]?.value ?? '—'}</td>`
+      ).join('')}</tr>`
     ).join('');
 
-    // ── Render ────────────────────────────────────────────────────────────────
+    // ── Render table ─────────────────────────────────────────────────────────
     body.innerHTML = `
-      <div class="tv-stat">Rows returned: <span>${rowCount}</span></div>
-      <div class="tv-stat">Dimensions: <span>${dimensions.length}</span> &nbsp; Measures: <span>${measures.length}</span></div>
-
-      <hr class="tv-divider">
-
-      <div class="tv-field-list">
-        <div style="font-size:11px;color:#999;margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em">
-          Dimensions (blue) &amp; Measures (green)
-        </div>
-        ${dimTags}${measTags}
-      </div>
-
-      <div class="tv-first-value">
-        First cell value
-        <code>${String(firstValue).substring(0, 80)}</code>
-      </div>`;
+      <table class="tv-table">
+        <thead>
+          <tr>${headerRow}</tr>
+        </thead>
+        <tbody>
+          ${rows}
+        </tbody>
+      </table>`;
 
     // Signal to Looker that rendering is complete
     this.trigger('updateComplete');
