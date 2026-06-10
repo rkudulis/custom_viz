@@ -165,6 +165,38 @@ looker.plugins.visualizations.add({
       </div>`;
   },
 
+  // ── Formatter helper ────────────────────────────────────────────────────────
+  formatValue(value, field) {
+    if (value == null || value === '') return '—';
+
+    const numVal = parseFloat(value);
+    if (isNaN(numVal)) return value;
+
+    // Check for percent format
+    if (field.value_format_name === 'percent_2' || field.value_format === '0.00%') {
+      return (numVal * 100).toFixed(2) + '%';
+    }
+    if (field.value_format_name === 'percent_1') {
+      return (numVal * 100).toFixed(1) + '%';
+    }
+    if (field.value_format_name === 'percent_0') {
+      return (numVal * 100).toFixed(0) + '%';
+    }
+
+    // Check for number format
+    if (field.value_format === '#,##0') {
+      return numVal.toLocaleString('en-US', { maximumFractionDigits: 0 });
+    }
+    if (field.value_format === '#,##0.00') {
+      return numVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+    if (field.value_format === '0.00') {
+      return numVal.toFixed(2);
+    }
+
+    return value;
+  },
+
   // ── update() — runs every time data or config changes ─────────────────────
   // This is where all your rendering logic lives.
   update(data, element, config, queryResponse) {
@@ -260,6 +292,7 @@ looker.plugins.visualizations.add({
     ).join('');
 
     // ── Build table rows ─────────────────────────────────────────────────────
+    const that = this;
     const rows = extendedData.map(row => {
       const isDelta = row[kpiFields[0]]?.is_delta;
       const rowClass = isDelta ? 'class="tv-delta-row"' : '';
@@ -268,7 +301,8 @@ looker.plugins.visualizations.add({
         const isDeltaCell = cell?.is_delta;
         const cellClass = isDeltaCell ? (cell.delta_sign === 'positive' ? 'tv-delta-positive' : 'tv-delta-negative') : '';
         const cellClassAttr = cellClass ? `class="${cellClass}"` : '';
-        return `<td ${cellClassAttr}>${cell?.rendered_value ?? cell?.value ?? '—'}</td>`;
+        const displayValue = cell?.rendered_value || that.formatValue(cell?.value, field) || '—';
+        return `<td ${cellClassAttr}>${displayValue}</td>`;
       }).join('')}</tr>`;
     }).join('');
 
