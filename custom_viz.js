@@ -292,7 +292,6 @@ looker.plugins.visualizations.add({
     ).join('');
 
     // ── Build table rows ─────────────────────────────────────────────────────
-    const that = this;
     const rows = extendedData.map(row => {
       const isDelta = row[kpiFields[0]]?.is_delta;
       const rowClass = isDelta ? 'class="tv-delta-row"' : '';
