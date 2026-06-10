@@ -321,34 +321,30 @@ looker.plugins.visualizations.add({
         </table>`;
 
       // ── Attach drill handlers ────────────────────────────────────────────────
-      if (queryResponse.hasDrills) {
-        const table = body.querySelector('#tv-data-table');
-        const rows = table.querySelectorAll('tbody tr');
-        const originalDataRowCount = data.length; // Only original data, not delta rows
+      const table = body.querySelector('#tv-data-table');
+      const tbodyRows = table.querySelectorAll('tbody tr');
 
-        rows.forEach((row, rowIdx) => {
-          // Skip synthetic delta rows (they have no corresponding queryResponse index)
-          if (rowIdx >= originalDataRowCount) {
-            return;
+      tbodyRows.forEach((trEl, rowIdx) => {
+        // Delta rows are synthetic — no corresponding data row, skip
+        if (rowIdx >= data.length) return;
+
+        const dataRow = data[rowIdx];
+        const cells = trEl.querySelectorAll('td');
+
+        cells.forEach((cell, cellIdx) => {
+          const field = allFields[cellIdx];
+          if (!field) return;
+
+          const cellData = dataRow[field.name];
+          if (cellData && cellData.links && cellData.links.length > 0) {
+            cell.setAttribute('data-drillable', 'true');
+            cell.addEventListener('click', (e) => {
+              e.stopPropagation();
+              LookerCharts.Utils.openDrillMenu({ links: cellData.links, event: e });
+            });
           }
-
-          const cells = row.querySelectorAll('td');
-          cells.forEach((cell, cellIdx) => {
-            const field = allFields[cellIdx];
-            if (!field) return;
-
-            // Check if field has drill capability
-            if (queryResponse.hasDrills(field, rowIdx)) {
-              cell.setAttribute('data-drillable', 'true');
-              cell.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const drillData = queryResponse.drillData(field, rowIdx);
-                that.trigger('drilldown', drillData);
-              });
-            }
-          });
         });
-      }
+      });
 
       // Signal to Looker that rendering is complete
       this.trigger('updateComplete');
