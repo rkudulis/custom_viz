@@ -43,10 +43,14 @@ export const styles = `
     background: #e8e8e8;
   }
   .tv-delta-positive {
-    color: #27ae60;
+    background: #d5f5e3;
+    color: #1e8449;
+    font-weight: 600;
   }
   .tv-delta-negative {
-    color: #e74c3c;
+    background: #fadbd8;
+    color: #c0392b;
+    font-weight: 600;
   }
   .tv-table td[data-drillable="true"] {
     cursor: pointer;
