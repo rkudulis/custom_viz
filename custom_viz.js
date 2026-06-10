@@ -20,6 +20,34 @@
  *   ✓ Viz options (config panel) work
  */
 
+function formatValue(value, field) {
+  if (value == null || value === '') return '—';
+
+  const numVal = parseFloat(value);
+  if (isNaN(numVal)) return value;
+
+  if (field.value_format_name === 'percent_2' || field.value_format === '0.00%') {
+    return (numVal * 100).toFixed(2) + '%';
+  }
+  if (field.value_format_name === 'percent_1') {
+    return (numVal * 100).toFixed(1) + '%';
+  }
+  if (field.value_format_name === 'percent_0') {
+    return (numVal * 100).toFixed(0) + '%';
+  }
+  if (field.value_format === '#,##0') {
+    return numVal.toLocaleString('en-US', { maximumFractionDigits: 0 });
+  }
+  if (field.value_format === '#,##0.00') {
+    return numVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  if (field.value_format === '0.00') {
+    return numVal.toFixed(2);
+  }
+
+  return value;
+}
+
 looker.plugins.visualizations.add({
 
   // Unique id — must not clash with any other registered viz
@@ -165,38 +193,6 @@ looker.plugins.visualizations.add({
       </div>`;
   },
 
-  // ── Formatter helper ────────────────────────────────────────────────────────
-  formatValue(value, field) {
-    if (value == null || value === '') return '—';
-
-    const numVal = parseFloat(value);
-    if (isNaN(numVal)) return value;
-
-    // Check for percent format
-    if (field.value_format_name === 'percent_2' || field.value_format === '0.00%') {
-      return (numVal * 100).toFixed(2) + '%';
-    }
-    if (field.value_format_name === 'percent_1') {
-      return (numVal * 100).toFixed(1) + '%';
-    }
-    if (field.value_format_name === 'percent_0') {
-      return (numVal * 100).toFixed(0) + '%';
-    }
-
-    // Check for number format
-    if (field.value_format === '#,##0') {
-      return numVal.toLocaleString('en-US', { maximumFractionDigits: 0 });
-    }
-    if (field.value_format === '#,##0.00') {
-      return numVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    }
-    if (field.value_format === '0.00') {
-      return numVal.toFixed(2);
-    }
-
-    return value;
-  },
-
   // ── update() — runs every time data or config changes ─────────────────────
   // This is where all your rendering logic lives.
   update(data, element, config, queryResponse) {
@@ -304,7 +300,7 @@ looker.plugins.visualizations.add({
           const isDeltaCell = cell?.is_delta;
           const cellClass = isDeltaCell ? (cell.delta_sign === 'positive' ? 'tv-delta-positive' : 'tv-delta-negative') : '';
           const cellClassAttr = cellClass ? `class="${cellClass}"` : '';
-          const displayValue = cell?.rendered_value || that.formatValue(cell?.value, field) || '—';
+          const displayValue = cell?.rendered_value || formatValue(cell?.value, field) || '—';
           return `<td ${cellClassAttr}>${displayValue}</td>`;
         }).join('')}</tr>`;
       };
