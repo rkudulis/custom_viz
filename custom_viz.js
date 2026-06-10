@@ -323,8 +323,14 @@ looker.plugins.visualizations.add({
     if (queryResponse.hasDrills) {
       const table = body.querySelector('#tv-data-table');
       const rows = table.querySelectorAll('tbody tr');
+      const originalDataRowCount = data.length; // Only original data, not delta rows
 
       rows.forEach((row, rowIdx) => {
+        // Skip synthetic delta rows (they have no corresponding queryResponse index)
+        if (rowIdx >= originalDataRowCount) {
+          return;
+        }
+
         const cells = row.querySelectorAll('td');
         cells.forEach((cell, cellIdx) => {
           const field = allFields[cellIdx];
