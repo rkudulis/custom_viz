@@ -149,6 +149,15 @@ looker.plugins.visualizations.add({
         .tv-delta-negative {
           color: #e74c3c;
         }
+        .tv-table td[data-drillable="true"] {
+          cursor: pointer;
+          text-decoration: underline;
+          text-decoration-color: #3498db;
+          text-decoration-style: dotted;
+        }
+        .tv-table td[data-drillable="true"]:hover {
+          background: #e3f2fd !important;
+        }
       </style>
       <div class="tv-wrap">
         <div class="tv-header" id="tv-header">Loading…</div>
@@ -265,7 +274,7 @@ looker.plugins.visualizations.add({
 
     // ── Render table ─────────────────────────────────────────────────────────
     body.innerHTML = `
-      <table class="tv-table">
+      <table class="tv-table" id="tv-data-table">
         <thead>
           <tr>${headerRow}</tr>
         </thead>
@@ -273,6 +282,31 @@ looker.plugins.visualizations.add({
           ${rows}
         </tbody>
       </table>`;
+
+    // ── Attach drill handlers ────────────────────────────────────────────────
+    const that = this;
+    if (queryResponse.hasDrills) {
+      const table = body.querySelector('#tv-data-table');
+      const rows = table.querySelectorAll('tbody tr');
+
+      rows.forEach((row, rowIdx) => {
+        const cells = row.querySelectorAll('td');
+        cells.forEach((cell, cellIdx) => {
+          const field = allFields[cellIdx];
+          if (!field) return;
+
+          // Check if field has drill capability
+          if (queryResponse.hasDrills(field, rowIdx)) {
+            cell.setAttribute('data-drillable', 'true');
+            cell.addEventListener('click', (e) => {
+              e.stopPropagation();
+              const drillData = queryResponse.drillData(field, rowIdx);
+              that.trigger('drilldown', drillData);
+            });
+          }
+        });
+      });
+    }
 
     // Signal to Looker that rendering is complete
     this.trigger('updateComplete');
