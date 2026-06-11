@@ -1,69 +1,51 @@
 (() => {
   // src/styles.js
-  var styles = `
-  .tv-wrap {
-    font-family: inherit;
-    padding: 0;
-    box-sizing: border-box;
-    height: 100%;
+  var DENSITY_PADDING = {
+    compact: "5px 8px",
+    default: "10px 12px",
+    comfortable: "15px 16px"
+  };
+  function buildStyles(config = {}) {
+    const cellAlign = config.cell_alignment || "left";
+    const headerAlign = config.header_alignment || "left";
+    const fontSize = config.font_size || "13px";
+    const padding = DENSITY_PADDING[config.row_density] || DENSITY_PADDING.default;
+    const headerBg = config.header_background || "#f4f4f4";
+    const zebraRule = config.zebra_striping ? `.tv-table tbody tr:nth-child(even) { background: #f7f7f7; }` : "";
+    return `
+    .tv-wrap { font-family: inherit; padding: 0; box-sizing: border-box; height: 100%; }
+    .tv-body { padding: 0; background: #fff; }
+    .tv-error { color: #c0392b; font-size: 13px; padding: 12px; }
+    .tv-table { width: 100%; border-collapse: collapse; font-size: ${fontSize}; }
+    .tv-table th {
+      background: ${headerBg};
+      padding: ${padding};
+      text-align: ${headerAlign};
+      border-bottom: 2px solid #ddd;
+      font-weight: 600;
+      color: #333;
+    }
+    .tv-table td {
+      padding: ${padding};
+      border-bottom: 1px solid #eee;
+      color: #444;
+      text-align: ${cellAlign};
+    }
+    .tv-table tr:hover { background: #f9f9f9; }
+    ${zebraRule}
+    .tv-delta-row { background: #f0f0f0; font-weight: 600; }
+    .tv-delta-row:hover { background: #e8e8e8; }
+    .tv-delta-positive { background: #d5f5e3; color: #1e8449; font-weight: 600; }
+    .tv-delta-negative { background: #fadbd8; color: #c0392b; font-weight: 600; }
+    .tv-table td[data-drillable="true"] {
+      cursor: pointer;
+      text-decoration: underline;
+      text-decoration-color: #3498db;
+      text-decoration-style: dotted;
+    }
+    .tv-table td[data-drillable="true"]:hover { background: #e3f2fd !important; }
+  `;
   }
-  .tv-body {
-    padding: 0;
-    background: #fff;
-  }
-  .tv-error {
-    color: #c0392b;
-    font-size: 13px;
-    padding: 12px;
-  }
-  .tv-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 13px;
-  }
-  .tv-table th {
-    background: #f4f4f4;
-    padding: 10px 12px;
-    text-align: left;
-    border-bottom: 2px solid #ddd;
-    font-weight: 600;
-    color: #333;
-  }
-  .tv-table td {
-    padding: 10px 12px;
-    border-bottom: 1px solid #eee;
-    color: #444;
-  }
-  .tv-table tr:hover {
-    background: #f9f9f9;
-  }
-  .tv-delta-row {
-    background: #f0f0f0;
-    font-weight: 600;
-  }
-  .tv-delta-row:hover {
-    background: #e8e8e8;
-  }
-  .tv-delta-positive {
-    background: #d5f5e3;
-    color: #1e8449;
-    font-weight: 600;
-  }
-  .tv-delta-negative {
-    background: #fadbd8;
-    color: #c0392b;
-    font-weight: 600;
-  }
-  .tv-table td[data-drillable="true"] {
-    cursor: pointer;
-    text-decoration: underline;
-    text-decoration-color: #3498db;
-    text-decoration-style: dotted;
-  }
-  .tv-table td[data-drillable="true"]:hover {
-    background: #e3f2fd !important;
-  }
-`;
 
   // src/deltaRows.js
   function buildDeltaRows(data, measureTypeField, kpiFields) {
@@ -176,17 +158,71 @@
   looker.plugins.visualizations.add({
     id: "test_viz",
     label: "Test Viz",
-    options: {},
+    options: {
+      header_alignment: {
+        type: "string",
+        label: "Header Alignment",
+        section: "Style",
+        order: 1,
+        display: "select",
+        default: "left",
+        values: [{ "Left": "left" }, { "Center": "center" }, { "Right": "right" }]
+      },
+      cell_alignment: {
+        type: "string",
+        label: "Cell Alignment",
+        section: "Style",
+        order: 2,
+        display: "select",
+        default: "left",
+        values: [{ "Left": "left" }, { "Center": "center" }, { "Right": "right" }]
+      },
+      font_size: {
+        type: "string",
+        label: "Font Size",
+        section: "Style",
+        order: 3,
+        display: "select",
+        default: "13px",
+        values: [{ "Small (12px)": "12px" }, { "Medium (13px)": "13px" }, { "Large (14px)": "14px" }]
+      },
+      row_density: {
+        type: "string",
+        label: "Row Density",
+        section: "Style",
+        order: 4,
+        display: "select",
+        default: "default",
+        values: [{ "Compact": "compact" }, { "Default": "default" }, { "Comfortable": "comfortable" }]
+      },
+      header_background: {
+        type: "string",
+        label: "Header Background",
+        section: "Style",
+        order: 5,
+        display: "color",
+        default: "#f4f4f4"
+      },
+      zebra_striping: {
+        type: "boolean",
+        label: "Alternating Row Colors",
+        section: "Style",
+        order: 6,
+        default: false
+      }
+    },
     create(element, config) {
-      element.innerHTML = `
-      <style>${styles}</style>
-      <div class="tv-wrap">
-        <div class="tv-body" id="tv-body"></div>
-      </div>`;
+      element.innerHTML = '<div class="tv-root"></div>';
     },
     update(data, element, config, queryResponse) {
       try {
         this.clearErrors();
+        element.querySelector("#tv-styles")?.remove();
+        element.querySelector(".tv-wrap")?.remove();
+        element.insertAdjacentHTML(
+          "beforeend",
+          `<style id="tv-styles">${buildStyles(config)}</style><div class="tv-wrap"><div class="tv-body" id="tv-body"></div></div>`
+        );
         const body = element.querySelector("#tv-body");
         const dimensions = queryResponse.fields.dimensions || [];
         const measures = queryResponse.fields.measures || [];
