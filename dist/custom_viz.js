@@ -86,7 +86,7 @@
 
   // src/formatValue.js
   function formatValue(value, field) {
-    if (value == null || value === "") return "\u2014";
+    if (value == null || value === "" || value === 0) return "\u2014";
     const numVal = parseFloat(value);
     if (isNaN(numVal)) return value;
     const fmt = field.value_format_name;

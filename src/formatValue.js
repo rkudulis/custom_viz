@@ -1,7 +1,7 @@
 // Fallback formatter — only fires when Looker does not provide rendered_value.
 // Looker-provided rendered_value already respects account locale, so prefer that.
 export function formatValue(value, field) {
-  if (value == null || value === '') return '—';
+  if (value == null || value === '' || value === 0) return '—';
 
   const numVal = parseFloat(value);
   if (isNaN(numVal)) return value;
