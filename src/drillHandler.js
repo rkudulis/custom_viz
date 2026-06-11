@@ -1,3 +1,19 @@
+function buildCombinedLink(factLink, comparisonValue) {
+  if (!factLink?.url) return null;
+  try {
+    const url = new URL(factLink.url, window.location.origin);
+    for (const [key, val] of url.searchParams.entries()) {
+      if (val === 'Fact') {
+        url.searchParams.set(key, `Fact,${comparisonValue}`);
+        break;
+      }
+    }
+    return { ...factLink, url: url.pathname + url.search };
+  } catch (_) {
+    return factLink;
+  }
+}
+
 function attachRowDrills(trEl, dataRow, allFields) {
   trEl.querySelectorAll('td').forEach((cell, cellIdx) => {
     const field = allFields[cellIdx];
@@ -27,21 +43,17 @@ export function attachDrillHandlers(table, data, allFields, measureTypeField) {
   const planRow = data.find(r => r[measureTypeField]?.value === 'Plan');
   const pyRow   = data.find(r => r[measureTypeField]?.value === 'Past Year');
 
-  table.querySelectorAll('tfoot tr').forEach((trEl, rowIdx) => {
+  table.querySelectorAll('tfoot tr').forEach((trEl) => {
     const label = trEl.querySelector('td')?.textContent?.trim();
     const isVsPlan = label === 'Fact vs Plan';
-    const baseRow  = isVsPlan ? planRow : pyRow;
+    const compValue = isVsPlan ? 'Plan' : 'Past Year';
 
     trEl.querySelectorAll('td').forEach((cell, cellIdx) => {
       const field = allFields[cellIdx];
       if (!field) return;
 
       const factLinks = factRow?.[field.name]?.links || [];
-      const baseLinks = baseRow?.[field.name]?.links || [];
-      const links = [
-        ...factLinks.map(l => ({ ...l, label: `Fact — ${l.label}` })),
-        ...baseLinks.map(l => ({ ...l, label: `${isVsPlan ? 'Plan' : 'Past Year'} — ${l.label}` })),
-      ];
+      const links = factLinks.map(l => buildCombinedLink(l, compValue)).filter(Boolean);
 
       if (links.length > 0) {
         cell.setAttribute('data-drillable', 'true');
