@@ -72,7 +72,7 @@ looker.plugins.visualizations.add({
       body.innerHTML = buildTableHTML(data, deltaRows, allFields, kpiFields, headerRow);
 
       const table = body.querySelector('#tv-data-table');
-      attachDrillHandlers(table, data, allFields);
+      attachDrillHandlers(table, data, allFields, measureTypeField);
     } catch (err) {
       console.error('Custom viz error:', err);
       this.addError({ title: 'Visualization Error', message: err.message });
