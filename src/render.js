@@ -17,7 +17,7 @@ export function buildHeaderRow(allFields) {
 }
 
 function renderRow(row, allFields, kpiFields) {
-  const isDeltaRow = row[kpiFields[0]]?.is_delta;
+  const isDeltaRow = kpiFields.some(k => row[k]?.is_delta);
   const rowClass = isDeltaRow ? 'class="tv-delta-row"' : '';
 
   const cells = allFields.map(field => {

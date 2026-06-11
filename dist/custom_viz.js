@@ -115,7 +115,7 @@
     return allFields.map((f) => `<th>${f.label_short || f.name}</th>`).join("");
   }
   function renderRow(row, allFields, kpiFields) {
-    const isDeltaRow = row[kpiFields[0]]?.is_delta;
+    const isDeltaRow = kpiFields.some((k) => row[k]?.is_delta);
     const rowClass = isDeltaRow ? 'class="tv-delta-row"' : "";
     const cells = allFields.map((field) => {
       const cell = row[field.name];
