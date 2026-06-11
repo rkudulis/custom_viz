@@ -39,9 +39,6 @@
     .tv-delta-negative { background: #fadbd8; color: #c0392b; font-weight: 600; }
     .tv-table td[data-drillable="true"] {
       cursor: pointer;
-      text-decoration: underline;
-      text-decoration-color: #3498db;
-      text-decoration-style: dotted;
     }
     .tv-table td[data-drillable="true"]:hover { background: #e3f2fd !important; }
   `;
