@@ -38,11 +38,12 @@ looker.plugins.visualizations.add({
   },
 
   create(element, config) {
-    // update() manages all DOM; create() just sets root container
+    if (!element) return;
     element.innerHTML = '<div class="tv-root"></div>';
   },
 
   update(data, element, config, queryResponse) {
+    if (!element) return;
     try {
       this.clearErrors();
 

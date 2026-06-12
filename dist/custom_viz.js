@@ -250,9 +250,11 @@
       }
     },
     create(element, config) {
+      if (!element) return;
       element.innerHTML = '<div class="tv-root"></div>';
     },
     update(data, element, config, queryResponse) {
+      if (!element) return;
       try {
         this.clearErrors();
         element.querySelector("#tv-styles")?.remove();
